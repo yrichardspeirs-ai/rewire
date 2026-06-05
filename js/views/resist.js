@@ -2,6 +2,7 @@
 
 import { getState, reclaimedMinutes } from '../state.js';
 import { fmtMins, prettyDate } from '../utils.js';
+import { RESIST_HERO } from '../copy.js';
 
 export function resist() {
   const S = getState();
@@ -24,9 +25,9 @@ export function resist() {
     </div>
 
     <div class="card resist-hero">
-      <h3>Don't fight it with willpower. Redirect it.</h3>
-      <p class="muted">When the urge hits, tap below. You'll get one specific two-minute swap pulled from your
-        own undone reps. Logging the win is what makes resisting feel like winning instead of depriving.</p>
+      <h3>Don't fight it with willpower. Willpower loses.</h3>
+      <p class="muted">${RESIST_HERO} When the urge hits, tap below — you'll get one specific two-minute swap
+        pulled from your own undone reps. Every time you redirect, you take a win the algorithm wanted for itself.</p>
       <button class="urge-btn big" data-action="open-urge">I want to scroll</button>
     </div>
 

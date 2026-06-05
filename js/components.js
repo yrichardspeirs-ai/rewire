@@ -37,7 +37,7 @@ export function repCard(q, editable = false) {
         ${intent}
       </div>
       <div class="q-right">
-        <span class="streak ${st ? '' : 'zero'}"><span class="flame">${'\u{1F525}'}</span>${st}</span>
+        <span class="streak ${st ? '' : 'zero'} ${st && !done ? 'at-risk' : ''}" style="--fl:${(1 + Math.min(st / 10, 0.9)).toFixed(2)}"><span class="flame">${'\u{1F525}'}</span>${st}</span>
         <span class="q-xp">+${q.xp} xp</span>
       </div>
       ${editable ? `<button class="q-del" data-action="del-rep" data-id="${q.id}" title="remove">\u2715</button>` : ''}
@@ -66,7 +66,7 @@ export function ring(done, total) {
     <div class="ring-wrap">
       <svg viewBox="0 0 120 120" class="ring">
         <circle cx="60" cy="60" r="${r}" class="ring-bg"/>
-        <circle cx="60" cy="60" r="${r}" class="ring-fg" style="stroke-dasharray:${c};stroke-dashoffset:${off}"/>
+        <circle cx="60" cy="60" r="${r}" class="ring-fg" data-off="${off}" style="stroke-dasharray:${c};stroke-dashoffset:${c}"/>
       </svg>
       <div class="ring-center"><div class="ring-pct">${pct}%</div><div class="ring-sub">${done}/${total} reps</div></div>
     </div>`;

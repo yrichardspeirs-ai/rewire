@@ -1,0 +1,94 @@
+/* animations.css — REWIRE "juice": completion feedback, milestone takeovers,
+   XP particles, the daily directive band, and the settings panel.
+   Keeps motion code separate from layout (styles.css). Honors reduced-motion. */
+
+/* ---- Daily directive band (Today) -------------------------------------- */
+.directive{position:relative;border:1px solid var(--line);border-left:3px solid var(--ember);
+  background:linear-gradient(100deg,rgba(249,115,22,0.10),rgba(20,20,22,0.4) 60%);
+  border-radius:14px;padding:15px 18px;margin-bottom:18px;animation:rise .5s ease both;overflow:hidden;}
+.directive .dir-k{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:0.2em;color:var(--ember-soft);}
+.directive p{font-family:var(--serif);font-size:18px;font-weight:500;line-height:1.35;margin-top:7px;color:var(--text);}
+
+/* ---- Streak flame: scales with streak length, warns when at risk ------- */
+/* Re-defines flick to fold in the per-rep --fl scale (this file loads last). */
+@keyframes flick{
+  0%,100%{transform:rotate(-3deg) scale(var(--fl,1));}
+  50%{transform:rotate(3deg) scale(calc(var(--fl,1) * 1.12));}
+}
+.streak.at-risk{color:var(--ember-soft);}
+.streak.at-risk .flame{animation:flick 1s ease-in-out infinite, riskPulse 1.6s ease-in-out infinite;}
+@keyframes riskPulse{0%,100%{filter:none;}50%{filter:drop-shadow(0 0 6px rgba(249,115,22,.9));}}
+
+/* ---- Rep completion: card pulse + checkmark draw ----------------------- */
+.quest.just-done{animation:repPulse .6s cubic-bezier(.2,.8,.2,1);}
+.quest.just-crit{animation:repCrit .75s cubic-bezier(.2,.8,.2,1);}
+@keyframes repPulse{
+  0%{transform:scale(1);}
+  30%{transform:scale(1.025);box-shadow:0 0 0 1px var(--ember),0 10px 30px -10px rgba(249,115,22,.5);}
+  100%{transform:scale(1);}
+}
+@keyframes repCrit{
+  0%{transform:scale(1);}
+  25%{transform:scale(1.05);box-shadow:0 0 0 2px var(--gold),0 0 40px -6px rgba(251,191,36,.7);}
+  60%{transform:scale(.99);}
+  100%{transform:scale(1);}
+}
+.quest.just-done .check svg polyline,
+.quest.just-crit .check svg polyline{stroke-dasharray:34;stroke-dashoffset:34;animation:draw .45s .04s ease forwards;}
+@keyframes draw{to{stroke-dashoffset:0;}}
+
+/* ---- XP particle that flies to the header XP counter ------------------- */
+.xp-fly{position:fixed;z-index:70;pointer-events:none;transform:translate(-50%,-50%);
+  font-family:var(--serif);font-weight:700;font-size:22px;color:var(--gold);
+  text-shadow:0 2px 12px rgba(251,191,36,.6);transition:transform .85s cubic-bezier(.3,.7,.2,1),opacity .85s ease;}
+.xp-fly.crit{font-size:30px;color:var(--ember-soft);text-shadow:0 2px 18px rgba(249,115,22,.8);}
+
+/* ---- Crit screen flash ------------------------------------------------- */
+#crit-flash{position:fixed;inset:0;z-index:55;pointer-events:none;opacity:0;
+  background:radial-gradient(120% 80% at 50% 50%,transparent 55%,rgba(251,191,36,.18) 100%);}
+#crit-flash.go{animation:critFlash .65s ease;}
+@keyframes critFlash{0%{opacity:0;}25%{opacity:1;}100%{opacity:0;}}
+
+/* ---- Milestone takeover (level-up / rank-up) --------------------------- */
+#takeover{position:fixed;inset:0;z-index:80;display:none;place-items:center;cursor:pointer;
+  background:radial-gradient(80% 60% at 50% 42%,color-mix(in srgb,var(--tc,#f97316) 22%,#0a0a0b),rgba(10,10,11,.97));
+  backdrop-filter:blur(4px);}
+#takeover.show{display:grid;animation:toFade .4s ease both;}
+@keyframes toFade{from{opacity:0;}to{opacity:1;}}
+.to-inner{text-align:center;padding:30px;max-width:560px;animation:toRise .6s cubic-bezier(.2,.9,.3,1.2) both;}
+.to-kind{font-family:var(--mono);font-size:13px;letter-spacing:0.42em;text-transform:uppercase;color:var(--tc,var(--ember));margin-bottom:14px;}
+.to-title{font-family:var(--serif);font-size:clamp(40px,9vw,72px);font-weight:700;letter-spacing:-0.02em;line-height:1;
+  color:#fff;text-shadow:0 0 40px color-mix(in srgb,var(--tc,#f97316) 60%,transparent);}
+.to-line{font-size:16px;color:var(--text);opacity:.85;margin-top:22px;line-height:1.5;max-width:34ch;margin-inline:auto;}
+.to-hint{font-family:var(--mono);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--faint);margin-top:34px;}
+@keyframes toRise{from{opacity:0;transform:translateY(24px) scale(.96);}to{opacity:1;transform:none;}}
+
+/* ---- Sidebar settings button ------------------------------------------ */
+.settings-btn{display:flex;align-items:center;gap:13px;padding:11px 13px;border-radius:11px;border:none;background:none;
+  color:var(--muted);font-family:var(--sans);font-weight:600;font-size:14.5px;cursor:pointer;transition:all .15s;width:100%;text-align:left;margin-bottom:6px;}
+.settings-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none;}
+.settings-btn:hover{color:var(--text);background:var(--surface);}
+
+/* ---- Settings panel ---------------------------------------------------- */
+#settings{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:60;display:none;place-items:center;backdrop-filter:blur(3px);}
+#settings.show{display:grid;}
+#settings .sheet{background:var(--surface);border:1px solid var(--line-strong);border-radius:20px;padding:26px 24px;max-width:440px;width:92%;
+  animation:pop .35s cubic-bezier(.2,.9,.3,1.4) both;}
+#settings .mk-eyebrow{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.2em;color:var(--ember);margin-bottom:8px;}
+#settings h2{font-family:var(--serif);font-size:24px;font-weight:600;margin-bottom:18px;}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line);}
+.set-row:last-child{border-bottom:none;}
+.set-name{font-size:15px;font-weight:600;}
+.set-desc{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
+.switch{flex:none;width:46px;height:27px;border-radius:20px;border:1px solid var(--line-strong);background:var(--bg);cursor:pointer;position:relative;transition:background .2s,border-color .2s;}
+.switch .knob{position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:var(--faint);transition:transform .2s,background .2s;}
+.switch.on{background:linear-gradient(180deg,var(--ember-soft),var(--ember-deep));border-color:transparent;}
+.switch.on .knob{transform:translateX(19px);background:#1a0f06;}
+
+/* ---- Respect reduced motion ------------------------------------------- */
+@media(prefers-reduced-motion:reduce){
+  .quest.just-done,.quest.just-crit,#crit-flash.go,.directive,.streak .flame,.streak.at-risk .flame{animation:none !important;}
+  .xp-fly{display:none !important;}
+  #takeover.show,.to-inner{animation:none !important;}
+  .ring-fg{transition:none !important;}
+}

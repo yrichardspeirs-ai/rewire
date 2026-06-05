@@ -1,7 +1,7 @@
 // state.js — single source of truth. Holds data, persists to localStorage,
 // and exposes actions. Views never touch storage directly; they call these.
 
-import { todayStr, shift } from './utils.js';
+import { todayStr, shift, levelFromXp, identLevel } from './utils.js';
 
 export const IDENTITIES = [
   { id: 'scholar',    name: 'The Scholar',    rank: 'Knowledge',    color: '#fb923c', feeds: 'Reading and studying the brain' },
@@ -33,6 +33,7 @@ function defaultState() {
     scroll: { resisted: 0, gaveIn: 0, run: 0, log: [] },
     history: {}, // 'YYYY-MM-DD' -> { done: [ids], reflection: '' }
     awards: {},  // 'YYYY-MM-DD' -> { questId: xpAwarded }
+    settings: { sound: false, haptics: true, motion: true, tone: 'clean' },
   };
 }
 
@@ -43,6 +44,7 @@ function migrate(p) {
   s.scroll = Object.assign({ resisted: 0, gaveIn: 0, run: 0, log: [] }, p.scroll || {});
   s.history = p.history || {};
   s.awards = p.awards || {};
+  s.settings = Object.assign({ sound: false, haptics: true, motion: true, tone: 'clean' }, p.settings || {});
   s.quests = (p.quests && p.quests.length) ? p.quests : JSON.parse(JSON.stringify(DEFAULT_QUESTS));
   return s;
 }
@@ -120,6 +122,9 @@ export function toggleQuest(id) {
   q.lastDone = t;
   const crit = Math.random() < 0.15;            // variable reward
   const award = crit ? q.xp * 2 : q.xp;
+  // snapshot levels before the award so we can detect a level/rank-up
+  const oldLevel = levelFromXp(S.totalXp);
+  const oldRank = identLevel(S.identXp[q.ident] || 0);
   S.totalXp += award;
   S.identXp[q.ident] = (S.identXp[q.ident] || 0) + award;
   S.awards[t] = S.awards[t] || {}; S.awards[t][id] = award;
@@ -127,6 +132,11 @@ export function toggleQuest(id) {
   if (!S.history[t].done.includes(id)) S.history[t].done.push(id);
   const idn = identById(q.ident);
   fx({ xp: award, label: crit ? 'CRITICAL REP' : '+ ' + (idn ? idn.name : ''), crit });
+  // milestone events (rendered as full-screen takeovers by the UI layer)
+  const newRank = identLevel(S.identXp[q.ident]);
+  if (newRank > oldRank) fx({ type: 'rankup', ident: q.ident, level: newRank });
+  const newLevel = levelFromXp(S.totalXp);
+  if (newLevel > oldLevel) fx({ type: 'levelup', level: newLevel });
   emit();
 }
 
@@ -165,3 +175,9 @@ export function saveReflection(v) {
 }
 
 export function setName(v) { S.name = (v || '').trim() || S.name; emit(); }
+
+export function setSetting(key, val) {
+  S.settings = S.settings || {};
+  S.settings[key] = val;
+  emit();
+}

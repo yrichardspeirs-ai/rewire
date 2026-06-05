@@ -1,7 +1,7 @@
 // sw.js — service worker. Makes REWIRE installable and fully usable offline.
 // Bump CACHE when you change any precached file so users get the update.
 
-const CACHE = 'rewire-v1';
+const CACHE = 'rewire-v2';
 
 // App shell: everything needed to boot with no network.
 const SHELL = [
@@ -9,12 +9,15 @@ const SHELL = [
   './index.html',
   './manifest.webmanifest',
   './css/styles.css',
+  './css/animations.css',
   './js/app.js',
   './js/state.js',
   './js/components.js',
   './js/ui.js',
   './js/utils.js',
   './js/pwa.js',
+  './js/fx.js',
+  './js/copy.js',
   './js/views/today.js',
   './js/views/reps.js',
   './js/views/resist.js',

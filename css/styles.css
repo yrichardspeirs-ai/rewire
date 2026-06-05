@@ -31,12 +31,13 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opac
 .nav-item:hover{color:var(--text);background:var(--surface);}
 .nav-item.active{color:var(--text);background:var(--surface);}
 .nav-item.active svg{stroke:var(--ember);color:var(--ember);}
-.install-btn{margin-top:auto;margin-bottom:14px;font-family:var(--sans);font-weight:600;font-size:13px;color:var(--text);
+.side-bottom{margin-top:auto;display:flex;flex-direction:column;}
+.install-btn{margin-bottom:14px;font-family:var(--sans);font-weight:600;font-size:13px;color:var(--text);
   background:linear-gradient(180deg,var(--ember-soft),var(--ember-deep));border:none;border-radius:11px;padding:11px 14px;
   cursor:pointer;box-shadow:0 6px 18px rgba(249,115,22,0.25);transition:transform .12s,box-shadow .12s;}
 .install-btn:hover{transform:translateY(-1px);box-shadow:0 9px 24px rgba(249,115,22,0.35);}
 .install-btn[hidden]{display:none;}
-.side-foot{margin-top:auto;font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:0.08em;}
+.side-foot{font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:0.08em;margin-top:8px;}
 
 /* CONTENT */
 .content{flex:1;padding:40px 46px 110px;max-width:980px;overflow-x:hidden;}
@@ -211,8 +212,13 @@ textarea:focus{border-color:var(--ember-soft);}
   .nav-item span{font-size:10px;}
   .content{padding:calc(28px + env(safe-area-inset-top)) 20px calc(100px + env(safe-area-inset-bottom));}
   .sidebar{padding-bottom:calc(8px + env(safe-area-inset-bottom));}
-  /* install button floats top-right instead of crowding the bottom nav */
+  /* bottom group dissolves so its children follow normal mobile rules */
+  .side-bottom{display:contents;}
+  /* install + settings float at the top instead of crowding the bottom nav */
   .install-btn:not([hidden]){position:fixed;top:calc(12px + env(safe-area-inset-top));right:14px;z-index:50;margin:0;padding:9px 14px;font-size:12px;}
+  .settings-btn{position:fixed;top:calc(12px + env(safe-area-inset-top));left:14px;z-index:50;width:auto;margin:0;padding:8px;border-radius:10px;
+    background:rgba(20,20,22,0.7);backdrop-filter:blur(8px);}
+  .settings-btn span{display:none;}
   .view-head h2{font-size:30px;}
   .today-grid,.prog-grid{grid-template-columns:1fr;}
   .stat-grid{grid-template-columns:1fr 1fr;}
