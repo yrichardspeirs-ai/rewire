@@ -1,8 +1,17 @@
 // state.js — single source of truth. Holds data, persists to localStorage,
 // and exposes actions. Views never touch storage directly; they call these.
 
-import { todayStr, shift, levelFromXp, identLevel, rankFromXp } from './utils.js';
+import { todayStr, shift, levelFromXp, identLevel, rankFromXp, addDays, dayDiff } from './utils.js';
 import { ACHIEVEMENTS } from './achievements.js';
+
+// Grit-style time-boxed challenges. Miss a required day and it's over (unless you
+// have a flex day banked). req: 'all' = every rep that day, 'hard' = only hard reps.
+export const CHALLENGE_PRESETS = [
+  { id: 'iron7',   name: 'Iron Week',    icon: '⚔️', days: 7,  flex: 0, req: 'all',  tier: 'Starter',  blurb: '7 days. Every rep. Zero misses. A clean test of will.' },
+  { id: 'forge14', name: 'Forge 14',     icon: '🔨', days: 14, flex: 1, req: 'all',  tier: 'Beginner', blurb: 'Two weeks. One flex day for when life truly hits.' },
+  { id: 'hard30',  name: '30 Days Hard', icon: '🪨', days: 30, flex: 0, req: 'hard', tier: 'Hard',     blurb: 'A month of only your hard things. No flex. No mercy.' },
+  { id: 'titan75', name: '75 Titan',     icon: '🗿', days: 75, flex: 2, req: 'all',  tier: 'Elite',    blurb: '75 days, the full forge. Two flex days — spend them wisely.' },
+];
 
 // Default identity roster — seeds new users. Editable copies live in state.identities.
 export const IDENTITIES = [
@@ -42,6 +51,8 @@ function defaultState() {
     history: {}, // 'YYYY-MM-DD' -> { done: [ids], reflection: '' }
     awards: {},  // 'YYYY-MM-DD' -> { questId: xpAwarded }
     achievements: {}, // achievementId -> unlocked date
+    challenge: null,   // active/most-recent challenge (Grit-style). null = none.
+    challengesWon: 0,  // cumulative completed challenges
     settings: { sound: false, haptics: true, motion: true, tone: 'clean' },
   };
 }
@@ -60,6 +71,8 @@ function migrate(p) {
   s.history = p.history || {};
   s.awards = p.awards || {};
   s.achievements = p.achievements || {};
+  s.challenge = p.challenge || null;
+  s.challengesWon = p.challengesWon || 0;
   s.settings = Object.assign({ sound: false, haptics: true, motion: true, tone: 'clean' }, p.settings || {});
   s.quests = (p.quests && p.quests.length) ? p.quests : clone(DEFAULT_QUESTS);
   return s;
@@ -121,6 +134,7 @@ function achievementMetrics() {
     hardDone: S.hardDone || 0,
     bestRepStreak: S.quests.reduce((m, q) => Math.max(m, q.streak || 0), 0),
     cleanRun: S.scroll.run || 0,
+    challengesWon: S.challengesWon || 0,
   };
 }
 // Unlock any newly-earned achievements; emits a takeover-worthy fx event each.
@@ -183,6 +197,7 @@ export function toggleQuest(id) {
   const newLadder = rankFromXp(S.totalXp);
   if (newLadder.idx > oldLadder) fx({ type: 'rankladder', name: newLadder.rank.name, color: newLadder.rank.color });
   checkAchievements();
+  syncChallenge(); // a completing rep may finish (or, on un-complete, never un-finishes) a challenge
   emit();
 }
 
@@ -254,4 +269,72 @@ export function toggleQuestHard(id) {
   const q = S.quests.find(x => x.id === id); if (!q) return;
   q.hard = !q.hard;
   emit();
+}
+
+// --- challenges (Grit-style hard-fail programs) ---------------------------
+export function startChallenge(presetId) {
+  const p = CHALLENGE_PRESETS.find(x => x.id === presetId); if (!p) return;
+  let reqIds = p.req === 'hard' ? S.quests.filter(q => q.hard).map(q => q.id) : S.quests.map(q => q.id);
+  if (!reqIds.length) reqIds = S.quests.map(q => q.id); // fallback: a "hard" challenge with no hard reps requires all
+  S.challenge = { id: p.id, name: p.name, icon: p.icon, days: p.days, flex: p.flex, reqIds, start: todayStr(), status: 'active' };
+  emit();
+}
+export function endChallenge() { S.challenge = null; emit(); } // abandon active OR clear a finished one
+
+// Pure: derive the full state of the active challenge from history. No mutation.
+export function challengeProgress() {
+  const c = S.challenge; if (!c) return null;
+  const today = todayStr();
+  const reqIds = c.reqIds || [];
+  const todayIdx = dayDiff(c.start, today);          // 0-based index of today within the window
+  const dayStates = [];
+  const missIdx = [];
+  let doneDays = 0, todayDoneCount = 0, todayComplete = false;
+  for (let i = 0; i < c.days; i++) {
+    const d = addDays(c.start, i);
+    if (i > todayIdx) { dayStates.push({ date: d, state: 'future' }); continue; }
+    const done = (S.history[d] && S.history[d].done) || [];
+    const allDone = reqIds.length > 0 && reqIds.every(id => done.includes(id));
+    if (i === todayIdx) {
+      todayDoneCount = reqIds.filter(id => done.includes(id)).length;
+      todayComplete = allDone;
+      if (allDone) { doneDays++; dayStates.push({ date: d, state: 'done' }); }
+      else dayStates.push({ date: d, state: 'today' });
+    } else if (allDone) { doneDays++; dayStates.push({ date: d, state: 'done' }); }
+    else { missIdx.push(dayStates.length); dayStates.push({ date: d, state: 'miss' }); }
+  }
+  // The first `flex` misses are forgiven (shown gold); the rest are fatal.
+  missIdx.slice(0, c.flex).forEach(i => { dayStates[i].state = 'flex'; });
+  const flexUsed = Math.min(missIdx.length, c.flex);
+  const flexLeft = Math.max(0, c.flex - missIdx.length);
+  const fatal = missIdx.slice(c.flex).map(i => dayStates[i].date);
+  const dayNumber = Math.min(todayIdx + 1, c.days);
+  let status = 'active';
+  if (fatal.length) status = 'failed';
+  else if (todayIdx + 1 > c.days) status = 'completed';
+  else if (todayIdx + 1 === c.days && todayComplete) status = 'completed';
+  return {
+    c, dayStates, dayNumber, totalDays: c.days, doneDays,
+    flexUsed, flexLeft, flexTotal: c.flex, reqCount: reqIds.length,
+    todayComplete, todayDoneCount, status, firstFatalMiss: fatal[0] || null,
+    pct: Math.round(Math.min(1, doneDays / c.days) * 100),
+  };
+}
+
+// Side-effecting: detect a win/fail transition once, celebrate, and lock it in.
+// Safe to call on app load (failures happen by the passage of time, not an action).
+export function syncChallenge() {
+  const c = S.challenge; if (!c || c.status !== 'active') return;
+  const p = challengeProgress(); if (!p) return;
+  if (p.status === 'failed') {
+    c.status = 'failed'; c.endedOn = todayStr(); c.failedOn = p.firstFatalMiss;
+    fx({ type: 'challengefail', name: c.name });
+    persist();
+  } else if (p.status === 'completed') {
+    c.status = 'completed'; c.endedOn = todayStr();
+    S.challengesWon = (S.challengesWon || 0) + 1;
+    checkAchievements();
+    fx({ type: 'challengewin', name: c.name, icon: c.icon, days: c.days });
+    persist();
+  }
 }

@@ -2,7 +2,8 @@
 
 import { onChange, onFx, getState, pickSwap, identById,
   toggleQuest, addQuest, delQuest, editQuestField, resolveUrge, saveReflection, setName, setSetting,
-  completeOnboarding, setWhy, editIdentity, toggleQuestHard } from './state.js';
+  completeOnboarding, setWhy, editIdentity, toggleQuestHard,
+  startChallenge, endChallenge, syncChallenge } from './state.js';
 import { toast, openUrge, closeModal, takeover, closeTakeover } from './ui.js';
 import { burstXP, celebrate, vibrate, sound, syncCounters } from './fx.js';
 import { rand, LEVELUP_LINES, RANKUP_LINES } from './copy.js';
@@ -10,10 +11,11 @@ import { onboarding, ONB_STEPS } from './views/onboarding.js';
 import { today } from './views/today.js';
 import { reps } from './views/reps.js';
 import { resist } from './views/resist.js';
+import { forge } from './views/forge.js';
 import { identity } from './views/identity.js';
 import { progress } from './views/progress.js';
 
-const VIEWS = { today, reps, resist, identity, progress };
+const VIEWS = { today, reps, resist, forge, identity, progress };
 const content = document.getElementById('content');
 
 function currentRoute() {
@@ -89,6 +91,16 @@ onFx(fx => {
     vibrate([0, 45, 55, 100]); sound('crit');
     return;
   }
+  if (fx.type === 'challengewin') {
+    takeover({ kind: 'CHALLENGE COMPLETE', label: (fx.icon || '🏆') + ' ' + fx.name, line: fx.days + ' days. You said you would and you did. Into the Cookie Jar.', color: 'var(--gold)' });
+    vibrate([0, 50, 60, 50, 60, 140]); sound('crit');
+    return;
+  }
+  if (fx.type === 'challengefail') {
+    takeover({ kind: 'CHALLENGE FAILED', label: '💀 ' + fx.name, line: 'You missed past your flex. No skip passes — that was the deal. Start it again today.', color: 'var(--red)' });
+    vibrate([0, 120, 60, 120]);
+    return;
+  }
   // standard XP event
   toast(fx.xp, fx.label, fx.crit);
   burstXP(fxOrigin, fx.xp, fx.crit);
@@ -105,6 +117,13 @@ document.addEventListener('click', e => {
   switch (action) {
     case 'toggle': fxOrigin = el.closest('.quest'); toggleQuest(id); break;
     case 'toggle-hard': toggleQuestHard(id); break;
+    case 'start-challenge':
+      if (confirm('Start this challenge? Miss a required day past your flex and it ends — you start over.')) startChallenge(id);
+      break;
+    case 'abandon-challenge':
+      if (confirm('Abandon this challenge? Quitting counts the same as failing.')) endChallenge();
+      break;
+    case 'clear-challenge': endChallenge(); break;
     case 'onb-next': captureOnbStep(); onbStep = Math.min(ONB_STEPS - 1, onbStep + 1); render(); break;
     case 'onb-back': captureOnbStep(); onbStep = Math.max(0, onbStep - 1); render(); break;
     case 'open-settings': openSettings(); break;
@@ -247,4 +266,7 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// Failures happen by the passage of time, so re-evaluate the challenge on load —
+// after onFx is wired, so any win/fail takeover actually shows.
+syncChallenge();
 render();

@@ -8,6 +8,17 @@ export function ds(d) {
 export function todayStr() { return ds(new Date()); }
 export function shift(n) { const d = new Date(); d.setDate(d.getDate() + n); return ds(d); }
 
+// Date arithmetic on 'YYYY-MM-DD' strings (challenge windows live on these).
+export function addDays(dateStr, n) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d); dt.setDate(dt.getDate() + n); return ds(dt);
+}
+export function dayDiff(aStr, bStr) {
+  const [ay, am, ad] = aStr.split('-').map(Number);
+  const [by, bm, bd] = bStr.split('-').map(Number);
+  return Math.round((new Date(by, bm - 1, bd) - new Date(ay, am - 1, ad)) / 86400000);
+}
+
 export function esc(s) {
   return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }

@@ -1,7 +1,7 @@
 // components.js — small HTML-building helpers reused across views.
 
 import { esc, identProgress, RANKS, rankFromXp } from './utils.js';
-import { getIdentities, identById, isDone, getState } from './state.js';
+import { getIdentities, identById, isDone, getState, challengeProgress } from './state.js';
 
 // A single rep row. `editable` adds inline editing + delete (used on the Reps page).
 export function repCard(q, editable = false) {
@@ -95,6 +95,25 @@ export function rankLadder() {
   }).join('');
 
   return `<div class="card rank-card" style="--rc:${r.color}">${hero}<div class="rank-rungs">${rungs}</div></div>`;
+}
+
+// Compact active-challenge strip for the Today page. Empty string when none.
+export function challengeBanner() {
+  const p = challengeProgress();
+  if (!p) return '';
+  const c = p.c;
+  if (c.status === 'failed')
+    return `<a class="chal-banner failed" href="#forge"><span class="cb-icon">💀</span>
+      <span class="cb-text"><b>${esc(c.name)} failed.</b> Tap to run it back.</span></a>`;
+  if (c.status === 'completed')
+    return `<a class="chal-banner won" href="#forge"><span class="cb-icon">${c.icon || '🏆'}</span>
+      <span class="cb-text"><b>${esc(c.name)} complete.</b> ${c.days} days banked. Start another.</span></a>`;
+  const risk = !p.todayComplete;
+  return `<a class="chal-banner ${risk ? 'risk' : 'ok'}" href="#forge">
+      <span class="cb-icon">${c.icon}</span>
+      <span class="cb-text"><b>${esc(c.name)}</b> · Day ${p.dayNumber}/${c.days}
+        <em>${risk ? `${p.todayDoneCount}/${p.reqCount} reps left today` : 'today banked ✓'}</em></span>
+      <span class="cb-bar"><span style="width:${p.pct}%"></span></span></a>`;
 }
 
 // SVG progress ring for "today complete".

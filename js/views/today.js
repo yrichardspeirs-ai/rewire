@@ -2,7 +2,7 @@
 
 import { getState, isDone, dayStreak } from '../state.js';
 import { levelFromXp, rankFromXp, esc, todayStr } from '../utils.js';
-import { repCard, ring } from '../components.js';
+import { repCard, ring, challengeBanner } from '../components.js';
 import { daily, DIRECTIVES, RING_FULL, RING_PARTIAL, RING_EMPTY, RESIST_CTA, REFLECT_PROMPT } from '../copy.js';
 
 export function today() {
@@ -30,6 +30,8 @@ export function today() {
         <div class="hstat"><span class="hn gold" data-key="streak" data-count="${streak}">${streak}</span><span class="hl">Streak</span></div>
       </div>
     </div>
+
+    ${challengeBanner()}
 
     <div class="directive">
       <span class="dir-k">Today's order</span>
