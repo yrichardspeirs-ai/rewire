@@ -1,7 +1,9 @@
 // sw.js — service worker. Makes REWIRE installable and fully usable offline.
-// Bump CACHE when you change any precached file so users get the update.
+// CACHE is stamped with the commit SHA at deploy time by .github/workflows/deploy.yml,
+// so every push automatically invalidates old caches. Locally it stays the literal
+// placeholder (a valid, stable cache name) — no manual bumping needed.
 
-const CACHE = 'rewire-v3';
+const CACHE = 'rewire-__CACHE_VERSION__';
 
 // App shell: everything needed to boot with no network.
 const SHELL = [
