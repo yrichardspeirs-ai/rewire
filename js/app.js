@@ -2,25 +2,29 @@
 
 import { onChange, onFx, getState, pickSwap, identById,
   toggleQuest, addQuest, delQuest, editQuestField, resolveUrge, saveReflection, setName, setSetting,
-  completeOnboarding, setWhy, editIdentity, toggleQuestHard,
-  startChallenge, endChallenge, syncChallenge } from './state.js';
+  completeOnboarding, setWhy, setNemesis, editIdentity, toggleQuestHard,
+  startChallenge, endChallenge, syncChallenge, logFocusSession } from './state.js';
 import { toast, openUrge, closeModal, takeover, closeTakeover } from './ui.js';
 import { burstXP, celebrate, vibrate, sound, syncCounters } from './fx.js';
 import { rand, LEVELUP_LINES, RANKUP_LINES } from './copy.js';
-import { onboarding, ONB_STEPS } from './views/onboarding.js';
+import { onboarding, ONB_STEPS, onbCanAdvance } from './views/onboarding.js';
 import { today } from './views/today.js';
 import { reps } from './views/reps.js';
-import { resist } from './views/resist.js';
+import { focus } from './views/focus.js';
 import { forge } from './views/forge.js';
 import { identity } from './views/identity.js';
-import { progress } from './views/progress.js';
+import { ranks } from './views/ranks.js';
 
-const VIEWS = { today, reps, resist, forge, identity, progress };
+// Critique-style structure: Blueprint · Ranks · Focus · Forge · You.
+// (reps is a secondary route reached from the Blueprint's "Edit" link.)
+const VIEWS = { blueprint: today, reps, focus, forge, you: identity, ranks };
+const ROUTE_ALIAS = { today: 'blueprint', progress: 'ranks', resist: 'focus', identity: 'you' };
 const content = document.getElementById('content');
 
 function currentRoute() {
-  const r = location.hash.replace('#', '');
-  return VIEWS[r] ? r : 'today';
+  let r = location.hash.replace('#', '');
+  if (ROUTE_ALIAS[r]) r = ROUTE_ALIAS[r];
+  return VIEWS[r] ? r : 'blueprint';
 }
 
 // onboarding flow state (only used when getState().onboarded is false)
@@ -124,8 +128,17 @@ document.addEventListener('click', e => {
       if (confirm('Abandon this challenge? Quitting counts the same as failing.')) endChallenge();
       break;
     case 'clear-challenge': endChallenge(); break;
-    case 'onb-next': captureOnbStep(); onbStep = Math.min(ONB_STEPS - 1, onbStep + 1); render(); break;
+    case 'onb-next': captureOnbStep(); if (!onbCanAdvance(onbStep, onbDraft)) break; onbStep = Math.min(ONB_STEPS - 1, onbStep + 1); render(); break;
     case 'onb-back': captureOnbStep(); onbStep = Math.max(0, onbStep - 1); render(); break;
+    case 'onb-focus': {
+      onbDraft.focus = onbDraft.focus || [];
+      const fi = onbDraft.focus.indexOf(el.dataset.id);
+      if (fi >= 0) onbDraft.focus.splice(fi, 1); else onbDraft.focus.push(el.dataset.id);
+      render();
+      break;
+    }
+    case 'start-focus': startFocus(parseInt(el.dataset.min, 10) || 25); break;
+    case 'end-focus': endFocusEarly(); break;
     case 'open-settings': openSettings(); break;
     case 'toggle-setting':
       setSetting(el.dataset.key, !getState().settings[el.dataset.key]);
@@ -205,6 +218,35 @@ document.addEventListener('pointerup', releaseHold);
 document.addEventListener('pointercancel', releaseHold);
 document.addEventListener('pointerleave', e => { if (e.target.closest && e.target.closest('.onb-commit')) releaseHold(); }, true);
 
+// --- focus session timer --------------------------------------------------
+let focusInt = null, focusEnd = 0, focusMin = 0;
+const foEl = () => document.getElementById('focus-overlay');
+const fmtClock = s => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+function tickFocus() {
+  const ms = Math.max(0, focusEnd - Date.now());
+  const t = document.getElementById('fo-time');
+  if (t) t.textContent = fmtClock(Math.round(ms / 1000));
+  if (ms <= 0) finishFocus();
+}
+function startFocus(min) {
+  focusMin = min; focusEnd = Date.now() + min * 60000;
+  const o = foEl(); if (o) o.classList.add('show');
+  tickFocus();
+  clearInterval(focusInt); focusInt = setInterval(tickFocus, 250);
+  vibrate(20);
+}
+function finishFocus() {
+  clearInterval(focusInt); focusInt = null;
+  const o = foEl(); if (o) o.classList.remove('show');
+  fxOrigin = document.querySelector('.focus-card') || document.body;
+  logFocusSession(focusMin); // banks XP + stats; fires the standard XP juice
+}
+function endFocusEarly() {
+  if (!confirm('End early? An unfinished session banks nothing.')) return;
+  clearInterval(focusInt); focusInt = null;
+  const o = foEl(); if (o) o.classList.remove('show');
+}
+
 // identity dropdown change
 document.addEventListener('change', e => {
   const el = e.target.closest('[data-action="edit-ident"]');
@@ -224,6 +266,8 @@ document.addEventListener('input', e => {
   if (ref) { saveReflection(ref.value); flashSaved('ref-saved', '_rt'); return; }
   const why = e.target.closest('[data-action="edit-why"]');
   if (why) { setWhy(why.value); flashSaved('why-saved', '_wt'); return; }
+  const nem = e.target.closest('[data-action="edit-nemesis"]');
+  if (nem) { setNemesis(nem.value); flashSaved('nem-saved', '_nt'); return; }
 });
 
 // close modal by backdrop click

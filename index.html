@@ -28,24 +28,21 @@
     <aside class="sidebar">
       <div class="brand"><span>REWIRE</span><b class="dot">.</b></div>
       <nav class="nav">
-        <a class="nav-item" href="#today" data-route="today">
+        <a class="nav-item" href="#blueprint" data-route="blueprint">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>
-          <span>Today</span></a>
-        <a class="nav-item" href="#reps" data-route="reps">
-          <svg viewBox="0 0 24 24"><line x1="8" y1="7" x2="20" y2="7"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="8" y1="17" x2="20" y2="17"/><circle cx="4" cy="7" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="4" cy="17" r="1.3" fill="currentColor" stroke="none"/></svg>
-          <span>Reps</span></a>
-        <a class="nav-item" href="#resist" data-route="resist">
-          <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/></svg>
-          <span>Resist</span></a>
+          <span>Blueprint</span></a>
+        <a class="nav-item" href="#ranks" data-route="ranks">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="19" y1="20" x2="19" y2="9"/></svg>
+          <span>Ranks</span></a>
+        <a class="nav-item" href="#focus" data-route="focus">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>
+          <span>Focus</span></a>
         <a class="nav-item" href="#forge" data-route="forge">
           <svg viewBox="0 0 24 24"><path d="M12 2c.8 3.2 4 4.2 4 7.5a4 4 0 0 1-8 0C8 7.7 9 6.7 10 6c0 1.8 1 2.7 2 2.7C12 6 11 5 12 2z"/><path d="M6 21h12"/></svg>
           <span>Forge</span></a>
-        <a class="nav-item" href="#identity" data-route="identity">
+        <a class="nav-item" href="#you" data-route="you">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>
-          <span>Identity</span></a>
-        <a class="nav-item" href="#progress" data-route="progress">
-          <svg viewBox="0 0 24 24"><line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="19" y1="20" x2="19" y2="9"/></svg>
-          <span>Progress</span></a>
+          <span>You</span></a>
       </nav>
       <div class="side-bottom">
         <button id="install-btn" class="install-btn" hidden>Install app</button>
@@ -89,6 +86,16 @@
 
   <!-- CRIT SCREEN FLASH -->
   <div id="crit-flash"></div>
+
+  <!-- FOCUS SESSION OVERLAY -->
+  <div id="focus-overlay">
+    <div class="fo-inner">
+      <div class="fo-kind">FOCUS · LOCKED IN</div>
+      <div class="fo-time" id="fo-time">25:00</div>
+      <div class="fo-label">No phone. No feed. No exits. Hold it.</div>
+      <button class="fo-end" data-action="end-focus">End session</button>
+    </div>
+  </div>
 
   <!-- SETTINGS -->
   <div id="settings">

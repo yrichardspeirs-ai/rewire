@@ -347,6 +347,62 @@ body.onboarding .content{max-width:none;padding:0;}
 .fr-line{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:12px;}
 .forge-result .forge-grid{max-width:340px;margin:16px auto;}
 
+/* COACH (Blueprint) */
+.coach{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--ember);border-radius:14px;padding:15px 17px;margin-bottom:26px;}
+.coach-head{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.coach-badge{font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.14em;color:#1a0f06;background:var(--ember);padding:3px 8px;border-radius:20px;}
+.coach-kind{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);}
+.coach p{font-family:var(--serif);font-size:16px;line-height:1.5;color:var(--text);}
+.edit-link{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ember-soft);text-decoration:none;border:1px solid var(--line);padding:2px 8px;border-radius:20px;margin-left:8px;}
+.edit-link:hover{border-color:var(--ember-soft);}
+
+/* ONBOARDING — focus-area picker */
+.onb-focus-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:6px;}
+.onb-focus{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px;cursor:pointer;text-align:left;transition:.15s;}
+.onb-focus:hover{border-color:var(--line-strong);}
+.onb-focus.on{border-color:var(--ember);background:rgba(249,115,22,.08);box-shadow:0 0 0 1px var(--ember) inset;}
+.of-icon{font-size:22px;}
+.of-name{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--text);}
+.of-tag{font-size:11px;color:var(--muted);}
+.onb-primary.is-disabled{opacity:.4;pointer-events:none;}
+
+/* FOCUS view — session timer */
+.focus-card h3{font-family:var(--serif);font-size:20px;font-weight:600;margin-bottom:6px;}
+.focus-presets{display:flex;gap:10px;margin:16px 0 14px;}
+.focus-preset{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:13px;padding:16px 0;font-family:var(--serif);font-size:24px;font-weight:700;color:var(--text);cursor:pointer;transition:.15s;}
+.focus-preset span{font-family:var(--mono);font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);font-weight:500;}
+.focus-preset:hover{border-color:var(--ember);color:var(--ember-soft);}
+.focus-preset:active{transform:scale(.97);}
+.focus-stats{display:flex;gap:22px;font-family:var(--mono);font-size:11px;color:var(--muted);}
+.focus-stats b{color:var(--ember-soft);font-size:13px;}
+
+/* FOCUS overlay (full-screen session) */
+#focus-overlay{position:fixed;inset:0;z-index:70;background:radial-gradient(circle at 50% 38%,#15110c,#050506 72%);display:none;place-items:center;}
+#focus-overlay.show{display:grid;animation:fadein .4s ease;}
+.fo-inner{text-align:center;padding:30px;}
+.fo-kind{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.25em;color:var(--ember);margin-bottom:18px;}
+.fo-time{font-family:var(--serif);font-size:76px;font-weight:700;color:var(--text);line-height:1;font-variant-numeric:tabular-nums;}
+.fo-label{color:var(--muted);font-size:14px;margin-top:18px;}
+.fo-end{margin-top:34px;background:transparent;border:1px solid var(--line-strong);color:var(--muted);font-family:var(--sans);font-size:13px;padding:11px 22px;border-radius:12px;cursor:pointer;}
+.fo-end:hover{border-color:var(--red);color:var(--red);}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+
+/* YOU — nemesis field */
+.why-nemesis{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);}
+.why-nemesis h3{font-family:var(--serif);font-size:18px;font-weight:600;margin-bottom:4px;}
+.nemesis-input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;color:var(--text);font-family:var(--sans);font-size:14px;padding:11px 13px;outline:none;}
+.nemesis-input:focus{border-color:var(--ember-soft);}
+
+/* COOKIE JAR (Ranks) */
+.jar-card{padding:16px;}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:10px;}
+.badge{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;padding:12px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);}
+.badge-ic{font-size:24px;}
+.badge-name{font-family:var(--mono);font-size:8.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted);line-height:1.2;}
+.badge.locked{opacity:.32;filter:grayscale(1);}
+.badge.got{border-color:rgba(251,191,36,.4);background:rgba(251,191,36,.06);}
+.badge.got .badge-name{color:var(--gold);}
+
 /* RESPONSIVE: sidebar becomes bottom nav */
 @media(max-width:780px){
   .app{flex-direction:column;}

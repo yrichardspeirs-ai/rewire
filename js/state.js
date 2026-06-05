@@ -3,6 +3,7 @@
 
 import { todayStr, shift, levelFromXp, identLevel, rankFromXp, addDays, dayDiff } from './utils.js';
 import { ACHIEVEMENTS } from './achievements.js';
+import { buildFromFocus } from './focus-areas.js';
 
 // Grit-style time-boxed challenges. Miss a required day and it's over (unless you
 // have a flex day banked). req: 'all' = every rep that day, 'hard' = only hard reps.
@@ -42,6 +43,7 @@ function defaultState() {
     onboarded: false,   // new users go through the setup + commitment contract
     why: '',            // your purpose / what fuels you (Armored Mind)
     nemesis: '',        // the doubter you're proving wrong (Taking Souls)
+    focus: [],          // chosen focus-area ids — the app is built from these
     identities: clone(IDENTITIES),
     quests: clone(DEFAULT_QUESTS),
     identXp: { scholar: 0, strategist: 0, polyglot: 0, founder: 0, monk: 0 },
@@ -53,6 +55,8 @@ function defaultState() {
     achievements: {}, // achievementId -> unlocked date
     challenge: null,   // active/most-recent challenge (Grit-style). null = none.
     challengesWon: 0,  // cumulative completed challenges
+    focusMinutes: 0,   // cumulative focus-session minutes
+    focusSessions: 0,  // cumulative completed focus sessions
     settings: { sound: false, haptics: true, motion: true, tone: 'clean' },
   };
 }
@@ -64,6 +68,7 @@ function migrate(p) {
   s.onboarded = (p.onboarded !== undefined) ? p.onboarded : true;
   s.why = p.why || '';
   s.nemesis = p.nemesis || '';
+  s.focus = p.focus || [];
   s.identities = (p.identities && p.identities.length) ? p.identities : clone(IDENTITIES);
   s.identXp = Object.assign({ scholar: 0, strategist: 0, polyglot: 0, founder: 0, monk: 0 }, p.identXp || {});
   s.hardDone = p.hardDone || 0;
@@ -73,6 +78,8 @@ function migrate(p) {
   s.achievements = p.achievements || {};
   s.challenge = p.challenge || null;
   s.challengesWon = p.challengesWon || 0;
+  s.focusMinutes = p.focusMinutes || 0;
+  s.focusSessions = p.focusSessions || 0;
   s.settings = Object.assign({ sound: false, haptics: true, motion: true, tone: 'clean' }, p.settings || {});
   s.quests = (p.quests && p.quests.length) ? p.quests : clone(DEFAULT_QUESTS);
   return s;
@@ -135,6 +142,7 @@ function achievementMetrics() {
     bestRepStreak: S.quests.reduce((m, q) => Math.max(m, q.streak || 0), 0),
     cleanRun: S.scroll.run || 0,
     challengesWon: S.challengesWon || 0,
+    focusSessions: S.focusSessions || 0,
   };
 }
 // Unlock any newly-earned achievements; emits a takeover-worthy fx event each.
@@ -250,6 +258,14 @@ export function completeOnboarding(data) {
     if (data.name) S.name = data.name.trim() || S.name;
     if (data.why != null) S.why = data.why.trim();
     if (data.nemesis != null) S.nemesis = data.nemesis.trim();
+    // Personalization: build identities + reps from the chosen focus areas.
+    if (data.focus && data.focus.length) {
+      const built = buildFromFocus(data.focus);
+      S.focus = built.focus;
+      S.identities = built.identities;
+      S.quests = built.quests;
+      S.identXp = built.identXp;
+    }
   }
   S.onboarded = true;
   S.committedOn = todayStr();
@@ -280,6 +296,22 @@ export function startChallenge(presetId) {
   emit();
 }
 export function endChallenge() { S.challenge = null; emit(); } // abandon active OR clear a finished one
+
+// --- focus sessions -------------------------------------------------------
+// A completed focus session banks XP (into the discipline identity if you have one)
+// and counts toward your focus stats. Early-ended sessions reward nothing — by design.
+export function logFocusSession(minutes) {
+  const m = Math.max(1, Math.round(minutes || 0));
+  S.focusSessions = (S.focusSessions || 0) + 1;
+  S.focusMinutes = (S.focusMinutes || 0) + m;
+  const award = Math.max(15, Math.round(m / 2));
+  S.totalXp += award;
+  const disc = (S.identities || []).find(i => i.id === 'monk') || (S.identities || [])[0];
+  if (disc) S.identXp[disc.id] = (S.identXp[disc.id] || 0) + award;
+  fx({ xp: award, label: 'FOCUS HELD', crit: true });
+  checkAchievements();
+  emit();
+}
 
 // Pure: derive the full state of the active challenge from history. No mutation.
 export function challengeProgress() {

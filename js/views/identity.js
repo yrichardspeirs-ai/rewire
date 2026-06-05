@@ -25,16 +25,23 @@ export function identity() {
     <div class="view-head">
       <div>
         <div class="eyebrow">Who you're becoming</div>
-        <h2>Identity</h2>
+        <h2>You</h2>
       </div>
     </div>
 
     <div class="card why-card">
       <h3>Your why</h3>
-      <p class="muted">When it gets hard — and it will — this is the reason you don't fold. Goggins calls it the
-        thing that fuels you. Write it raw and read it before every session.</p>
+      <p class="muted">When it gets hard — and it will — this is the reason you don't fold. Write it raw and
+        read it before every session.</p>
       <textarea data-action="edit-why" placeholder="I do this because...">${esc(S.why || '')}</textarea>
       <span class="saved-tag" id="why-saved">saved ✓</span>
+
+      <div class="why-nemesis">
+        <h3>Your nemesis</h3>
+        <p class="muted">The doubter. The old you. Every rep takes its soul.</p>
+        <input class="nemesis-input" data-action="edit-nemesis" maxlength="60" placeholder="the version of me that quits" value="${esc(S.nemesis || '')}">
+        <span class="saved-tag" id="nem-saved">saved ✓</span>
+      </div>
     </div>
 
     <p class="lead">You don't sustain behavior that feels like a chore. You sustain behavior that confirms who you

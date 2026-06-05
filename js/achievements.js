@@ -19,4 +19,5 @@ export const ACHIEVEMENTS = [
   { id: 'hard_50',      name: 'Calloused Mind',  icon: '🧠', desc: '50 hard things done. The mind is armor now.', test: m => m.hardDone >= 50 },
   { id: 'clean_run_10', name: 'Clean Hands',     icon: '✋', desc: 'A clean run of 10 resisted urges, no slips.', test: m => m.cleanRun >= 10 },
   { id: 'first_forge',  name: 'Forged in Fire',  icon: '🔥', desc: 'Complete your first challenge. Survived the forge.', test: m => m.challengesWon >= 1 },
+  { id: 'first_focus',  name: 'Locked In',        icon: '🎯', desc: 'Hold your first full focus session, no escape.', test: m => m.focusSessions >= 1 },
 ];

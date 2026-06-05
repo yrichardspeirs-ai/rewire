@@ -1,11 +1,17 @@
-// views/resist.js — the anti-doomscroll core, with stats and a log.
+// views/focus.js — Critique-style "Boost Your Focus". A focus-session timer (hold it
+// or get nothing) plus the anti-doomscroll Resist core, all in one place.
 
 import { getState, reclaimedMinutes } from '../state.js';
 import { fmtMins, prettyDate } from '../utils.js';
 import { RESIST_HERO } from '../copy.js';
 
-export function resist() {
+const PRESETS = [25, 45, 60];
+
+export function focus() {
   const S = getState();
+  const timer = PRESETS.map(m =>
+    `<button class="focus-preset" data-action="start-focus" data-min="${m}">${m}<span>min</span></button>`).join('');
+
   const log = S.scroll.log || [];
   const logHtml = log.length
     ? log.slice(0, 12).map(e => `
@@ -19,15 +25,27 @@ export function resist() {
   return `
     <div class="view-head">
       <div>
-        <div class="eyebrow">Discipline</div>
-        <h2>Resist the scroll</h2>
+        <div class="eyebrow">Lock in</div>
+        <h2>Focus</h2>
       </div>
     </div>
 
+    <div class="card focus-card">
+      <h3>Lock in. No exits.</h3>
+      <p class="muted">Pick a length and go. No phone, no feed, no switching until the timer dies.
+        Hold the whole session and you bank the XP — quit early and you get nothing. That's the deal.</p>
+      <div class="focus-presets">${timer}</div>
+      <div class="focus-stats">
+        <span><b>${S.focusSessions || 0}</b> sessions held</span>
+        <span><b>${fmtMins(S.focusMinutes || 0)}</b> locked in</span>
+      </div>
+    </div>
+
+    <div class="section-label">Resist the scroll</div>
     <div class="card resist-hero">
       <h3>Don't fight it with willpower. Willpower loses.</h3>
       <p class="muted">${RESIST_HERO} When the urge hits, tap below — you'll get one specific two-minute swap
-        pulled from your own undone reps. Every time you redirect, you take a win the algorithm wanted for itself.</p>
+        pulled from your own undone reps. Every redirect is a win the algorithm wanted for itself.</p>
       <button class="urge-btn big" data-action="open-urge">I want to scroll</button>
     </div>
 

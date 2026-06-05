@@ -66,3 +66,15 @@ export const RESIST_CTA = 'The feed is designed to beat you. Beat it first.';
 
 // Reflection / accountability prompt (Today).
 export const REFLECT_PROMPT = 'No excuses. What did you actually do today — and what did you dodge?';
+
+// Daily Coach — a local, rule-based read on your day. No backend, no LLM: just your
+// own data turned into a directive. Returns { kind, line }.
+export function coachLine(c) {
+  if (c.challengeRisk) return { kind: 'Challenge', line: `${c.challengeName} needs ${c.repsLeft} more rep${c.repsLeft === 1 ? '' : 's'} before midnight. Don't break the chain you swore to keep.` };
+  if (c.total && c.doneCount === c.total) return { kind: 'Standard', line: "Full clear. That's not a good day — it's the standard now. Bank it and move." };
+  if (c.doneCount === 0 && c.part !== 'morning') return { kind: 'Wake up', line: `${c.part === 'evening' ? "The day's almost gone" : "Half the day's gone"} and zero reps banked. The clock doesn't negotiate. Take the first one now.` };
+  if (c.slipsRecent) return { kind: 'Hold the line', line: "You've given in more than you've held lately. Next urge, redirect it — take that soul back." };
+  if (c.streak >= 7) return { kind: 'Protect it', line: `Day ${c.streak}. The chain is real now. Today is about not being the reason it breaks.` };
+  if (c.doneCount > 0 && c.doneCount < c.total) return { kind: 'Keep moving', line: `${c.doneCount} down, ${c.total - c.doneCount} to go. The hard ones are the ones that count — don't leave them.` };
+  return { kind: 'Orders', line: daily(DIRECTIVES) };
+}

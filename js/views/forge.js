@@ -106,5 +106,5 @@ export function forge() {
       ${dayGrid(p.dayStates)}
       <button class="fa-abandon" data-action="abandon-challenge">Abandon challenge</button>
     </div>
-    <p class="lead">Required reps live on the <a href="#today">Today</a> page. The Forge only watches whether you did them — it doesn't forgive.</p>`;
+    <p class="lead">Required reps live on the <a href="#blueprint">Blueprint</a>. The Forge only watches whether you did them — it doesn't forgive.</p>`;
 }
