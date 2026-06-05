@@ -19,7 +19,12 @@ export function onboarding(step, draft) {
       <h1>This is not a habit tracker.</h1>
       <p>It's a discipline engine. You're going to forge the person you keep saying you'll become —
         one rep, one resisted urge, one hard thing at a time. No motivation. No excuses. Just reps.</p>
-      <button class="onb-primary" data-action="onb-next">I'm in</button>`;
+      <button class="onb-primary" data-action="onb-next">I'm in</button>
+      <div class="onb-trust">
+        <span class="ot-item"><b>Free</b><span>forever — no paywall, no account</span></span>
+        <span class="ot-item"><b>Private</b><span>your data never leaves this device</span></span>
+        <span class="ot-item"><b>Installable</b><span>any phone, works offline</span></span>
+      </div>`;
   } else if (step === 1) {
     body = `
       <div class="onb-kicker">Step 1 · Your name</div>

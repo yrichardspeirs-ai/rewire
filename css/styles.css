@@ -270,6 +270,14 @@ body.onboarding .content{max-width:none;padding:0;}
 .onb-commit.committed .onb-commit-fill{width:100%!important;background:linear-gradient(90deg,var(--gold),var(--ember-soft));}
 .onb-commit.committed .onb-commit-label{color:#1a0f06;}
 
+/* Trust strip (free / private / installable) — first-run + settings */
+.onb-trust{display:flex;gap:8px;margin-top:26px;}
+.ot-item{flex:1;display:flex;flex-direction:column;gap:3px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:11px 8px;text-align:center;}
+.ot-item b{font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--ember-soft);}
+.ot-item span{font-size:10px;color:var(--muted);line-height:1.35;}
+.set-privacy{margin-top:16px;padding:14px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;font-size:12.5px;color:var(--muted);line-height:1.55;}
+.set-privacy b{color:var(--text);}
+
 /* THE FORGE — Grit-style challenges */
 /* Today banner */
 .chal-banner{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--fcb,var(--ember));border-radius:13px;padding:12px 15px;margin-bottom:22px;text-decoration:none;color:var(--text);position:relative;overflow:hidden;transition:border-color .2s;}
