@@ -31,6 +31,9 @@
         <a class="nav-item" href="#blueprint" data-route="blueprint">
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>
           <span>Blueprint</span></a>
+        <a class="nav-item" href="#log" data-route="log">
+          <svg viewBox="0 0 24 24"><path d="M3 13h3l2-6 3 11 2.5-8 1.5 3h6"/></svg>
+          <span>Log</span></a>
         <a class="nav-item" href="#ranks" data-route="ranks">
           <svg viewBox="0 0 24 24"><line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="19" y1="20" x2="19" y2="9"/></svg>
           <span>Ranks</span></a>
@@ -94,6 +97,15 @@
       <div class="fo-time" id="fo-time">25:00</div>
       <div class="fo-label">No phone. No feed. No exits. Hold it.</div>
       <button class="fo-end" data-action="end-focus">End session</button>
+    </div>
+  </div>
+
+  <!-- BOX-BREATHING OVERLAY -->
+  <div id="breath-overlay">
+    <div class="br-inner">
+      <div class="br-circle"><span class="br-phase" id="br-phase">Breathe in</span></div>
+      <div class="br-count" id="br-count">3:00</div>
+      <button class="br-end" data-action="end-breath">End</button>
     </div>
   </div>
 

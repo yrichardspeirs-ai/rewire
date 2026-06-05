@@ -3,21 +3,23 @@
 import { onChange, onFx, getState, pickSwap, identById,
   toggleQuest, addQuest, delQuest, editQuestField, resolveUrge, saveReflection, setName, setSetting,
   completeOnboarding, setWhy, setNemesis, editIdentity, toggleQuestHard,
-  startChallenge, endChallenge, syncChallenge, logFocusSession } from './state.js';
+  startChallenge, endChallenge, syncChallenge, logFocusSession, logBreath,
+  addFood, removeFood, setNutritionTargets, logWeight, logWorkout, setMetric, addMetricDef, removeMetricDef } from './state.js';
 import { toast, openUrge, closeModal, takeover, closeTakeover } from './ui.js';
 import { burstXP, celebrate, vibrate, sound, syncCounters } from './fx.js';
 import { rand, LEVELUP_LINES, RANKUP_LINES } from './copy.js';
 import { onboarding, ONB_STEPS, onbCanAdvance } from './views/onboarding.js';
 import { today } from './views/today.js';
 import { reps } from './views/reps.js';
+import { log } from './views/log.js';
 import { focus } from './views/focus.js';
 import { forge } from './views/forge.js';
 import { identity } from './views/identity.js';
 import { ranks } from './views/ranks.js';
 
-// Critique-style structure: Blueprint · Ranks · Focus · Forge · You.
+// Critique-style structure: Blueprint · Log · Ranks · Focus · Forge · You.
 // (reps is a secondary route reached from the Blueprint's "Edit" link.)
-const VIEWS = { blueprint: today, reps, focus, forge, you: identity, ranks };
+const VIEWS = { blueprint: today, log, reps, focus, forge, you: identity, ranks };
 const ROUTE_ALIAS = { today: 'blueprint', progress: 'ranks', resist: 'focus', identity: 'you' };
 const content = document.getElementById('content');
 
@@ -139,6 +141,28 @@ document.addEventListener('click', e => {
     }
     case 'start-focus': startFocus(parseInt(el.dataset.min, 10) || 25); break;
     case 'end-focus': endFocusEarly(); break;
+    case 'start-breath': startBreath(); break;
+    case 'end-breath': endBreath(); break;
+    case 'add-food': {
+      const n = document.getElementById('food-name');
+      if (!n) break;
+      addFood({
+        name: n.value, kcal: document.getElementById('food-kcal').value,
+        protein: document.getElementById('food-p').value, carbs: document.getElementById('food-c').value,
+        fat: document.getElementById('food-f').value,
+      });
+      break;
+    }
+    case 'del-food': removeFood(+el.dataset.ts); break;
+    case 'log-weight': { const w = document.getElementById('weight-in'); if (w) logWeight(w.value); break; }
+    case 'log-workout': {
+      const n = document.getElementById('wk-name'), m = document.getElementById('wk-min');
+      if (n && n.value.trim()) { fxOrigin = el.closest('.card'); logWorkout({ name: n.value, minutes: m.value }); }
+      break;
+    }
+    case 'set-metric': setMetric(el.dataset.id, +el.dataset.val); break;
+    case 'add-metric': { const mi = document.getElementById('add-metric'); if (mi && mi.value.trim()) addMetricDef(mi.value.trim()); break; }
+    case 'del-metric': removeMetricDef(el.dataset.id); break;
     case 'open-settings': openSettings(); break;
     case 'toggle-setting':
       setSetting(el.dataset.key, !getState().settings[el.dataset.key]);
@@ -175,6 +199,7 @@ document.addEventListener('focusout', e => {
   if (action === 'edit-ident-name') editIdentity(id, 'name', el.textContent.trim());
   if (action === 'edit-ident-rank') editIdentity(id, 'rank', el.textContent.trim());
   if (action === 'edit-ident-feeds') editIdentity(id, 'feeds', el.textContent.trim());
+  if (action === 'edit-goal') setNutritionTargets({ [el.dataset.key]: parseInt(el.textContent.replace(/[^0-9]/g, ''), 10) || 0 });
 });
 
 // --- hold-to-commit (onboarding pact) -------------------------------------
@@ -245,6 +270,44 @@ function endFocusEarly() {
   if (!confirm('End early? An unfinished session banks nothing.')) return;
   clearInterval(focusInt); focusInt = null;
   const o = foEl(); if (o) o.classList.remove('show');
+}
+
+// --- box breathing --------------------------------------------------------
+let breathInt = null, breathTimer = null, breathEnd = 0, breathPhase = 0;
+const BREATH = [
+  { t: 'Breathe in', ms: 4000, cls: 'inhale' },
+  { t: 'Hold', ms: 4000, cls: 'hold-in' },
+  { t: 'Breathe out', ms: 4000, cls: 'exhale' },
+  { t: 'Hold', ms: 4000, cls: 'hold-out' },
+];
+function breathTick() {
+  const el = document.getElementById('br-count');
+  if (el) el.textContent = fmtClock(Math.max(0, Math.round((breathEnd - Date.now()) / 1000)));
+}
+function breathRunPhase() {
+  const p = BREATH[breathPhase % BREATH.length];
+  const circle = document.querySelector('.br-circle');
+  const ph = document.getElementById('br-phase');
+  if (ph) ph.textContent = p.t;
+  if (circle) { circle.classList.remove('inhale', 'hold-in', 'exhale', 'hold-out'); void circle.offsetWidth; circle.classList.add(p.cls); }
+  vibrate(15);
+  breathPhase++;
+  breathTimer = setTimeout(() => { if (Date.now() >= breathEnd) finishBreath(); else breathRunPhase(); }, p.ms);
+}
+function startBreath() {
+  breathEnd = Date.now() + 3 * 60000; breathPhase = 0;
+  const o = document.getElementById('breath-overlay'); if (o) o.classList.add('show');
+  breathTick(); breathRunPhase();
+  clearInterval(breathInt); breathInt = setInterval(breathTick, 250);
+}
+function finishBreath() {
+  clearInterval(breathInt); clearTimeout(breathTimer); breathInt = null;
+  const o = document.getElementById('breath-overlay'); if (o) o.classList.remove('show');
+  logBreath();
+}
+function endBreath() {
+  clearInterval(breathInt); clearTimeout(breathTimer); breathInt = null;
+  const o = document.getElementById('breath-overlay'); if (o) o.classList.remove('show');
 }
 
 // identity dropdown change

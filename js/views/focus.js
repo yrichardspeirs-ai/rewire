@@ -41,6 +41,14 @@ export function focus() {
       </div>
     </div>
 
+    <div class="section-label">Box breathing</div>
+    <div class="card breath-card">
+      <h3>Reset the nervous system.</h3>
+      <p class="muted">Four in, hold four, four out, hold four. Three minutes drags you out of fight-or-flight and back
+        into control. ${S.breathSessions || 0} sessions held.</p>
+      <button class="breath-start" data-action="start-breath">Begin breathing</button>
+    </div>
+
     <div class="section-label">Resist the scroll</div>
     <div class="card resist-hero">
       <h3>Don't fight it with willpower. Willpower loses.</h3>

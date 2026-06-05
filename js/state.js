@@ -57,6 +57,19 @@ function defaultState() {
     challengesWon: 0,  // cumulative completed challenges
     focusMinutes: 0,   // cumulative focus-session minutes
     focusSessions: 0,  // cumulative completed focus sessions
+    breathSessions: 0, // cumulative breathing sessions held
+    // --- the Log: nutrition / body / daily metrics (all local, customizable) ---
+    nutrition: { targets: { kcal: 2200, protein: 160, carbs: 220, fat: 70 }, log: {} },
+    body: { weights: [], workouts: [] },
+    metrics: {
+      defs: [
+        { id: 'mood',       label: 'Mood',       emoji: '🙂' },
+        { id: 'energy',     label: 'Energy',     emoji: '⚡' },
+        { id: 'confidence', label: 'Confidence', emoji: '🦁' },
+        { id: 'sleep',      label: 'Sleep',      emoji: '😴' },
+      ],
+      log: {}, // 'YYYY-MM-DD' -> { metricId: 1..5 }
+    },
     settings: { sound: false, haptics: true, motion: true, tone: 'clean' },
   };
 }
@@ -80,6 +93,10 @@ function migrate(p) {
   s.challengesWon = p.challengesWon || 0;
   s.focusMinutes = p.focusMinutes || 0;
   s.focusSessions = p.focusSessions || 0;
+  s.breathSessions = p.breathSessions || 0;
+  s.nutrition = (p.nutrition && p.nutrition.targets) ? p.nutrition : d.nutrition;
+  s.body = (p.body && p.body.weights) ? p.body : { weights: [], workouts: [] };
+  s.metrics = (p.metrics && p.metrics.defs) ? p.metrics : d.metrics;
   s.settings = Object.assign({ sound: false, haptics: true, motion: true, tone: 'clean' }, p.settings || {});
   s.quests = (p.quests && p.quests.length) ? p.quests : clone(DEFAULT_QUESTS);
   return s;
@@ -312,6 +329,51 @@ export function logFocusSession(minutes) {
   checkAchievements();
   emit();
 }
+export function logBreath() { S.breathSessions = (S.breathSessions || 0) + 1; emit(); }
+
+// --- the Log: nutrition --------------------------------------------------
+export function setNutritionTargets(t) { Object.assign(S.nutrition.targets, t); emit(); }
+export function addFood(f) {
+  const t = todayStr();
+  (S.nutrition.log[t] = S.nutrition.log[t] || []).push({
+    name: (f.name || 'Food').slice(0, 40),
+    kcal: +f.kcal || 0, protein: +f.protein || 0, carbs: +f.carbs || 0, fat: +f.fat || 0, ts: Date.now(),
+  });
+  emit();
+}
+export function removeFood(ts) {
+  const t = todayStr(); if (!S.nutrition.log[t]) return;
+  S.nutrition.log[t] = S.nutrition.log[t].filter(x => x.ts !== ts); emit();
+}
+export function nutritionToday() {
+  const items = S.nutrition.log[todayStr()] || [];
+  const sum = items.reduce((a, x) => ({ kcal: a.kcal + x.kcal, protein: a.protein + x.protein, carbs: a.carbs + x.carbs, fat: a.fat + x.fat }), { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+  return { items, sum, targets: S.nutrition.targets };
+}
+
+// --- the Log: body (weight + workouts) -----------------------------------
+export function logWeight(kg) {
+  const v = +kg; if (!v) return;
+  S.body.weights.push({ date: todayStr(), kg: v, ts: Date.now() });
+  S.body.weights = S.body.weights.slice(-180);
+  emit();
+}
+export function logWorkout(w) {
+  S.body.workouts.unshift({ date: todayStr(), name: (w.name || 'Workout').slice(0, 40), minutes: +w.minutes || 0, note: (w.note || '').slice(0, 80), ts: Date.now() });
+  S.body.workouts = S.body.workouts.slice(0, 80);
+  const aw = Math.max(15, Math.round((+w.minutes || 0) / 2));
+  S.totalXp += aw;
+  const ath = (S.identities || []).find(i => i.id === 'athlete') || (S.identities || [])[0];
+  if (ath) S.identXp[ath.id] = (S.identXp[ath.id] || 0) + aw;
+  fx({ xp: aw, label: 'WORKOUT LOGGED', crit: true });
+  checkAchievements();
+  emit();
+}
+
+// --- the Log: daily metrics (customizable self-ratings) ------------------
+export function setMetric(id, val) { const t = todayStr(); (S.metrics.log[t] = S.metrics.log[t] || {})[id] = +val; emit(); }
+export function addMetricDef(label, emoji) { if (!label) return; S.metrics.defs.push({ id: 'm_' + Date.now(), label: label.slice(0, 24), emoji: emoji || '•' }); emit(); }
+export function removeMetricDef(id) { S.metrics.defs = S.metrics.defs.filter(m => m.id !== id); emit(); }
 
 // Pure: derive the full state of the active challenge from history. No mutation.
 export function challengeProgress() {

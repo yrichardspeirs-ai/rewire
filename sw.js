@@ -25,6 +25,7 @@ const SHELL = [
   './js/views/onboarding.js',
   './js/views/today.js',
   './js/views/reps.js',
+  './js/views/log.js',
   './js/views/focus.js',
   './js/views/forge.js',
   './js/views/identity.js',
