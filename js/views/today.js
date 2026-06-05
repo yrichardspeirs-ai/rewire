@@ -1,7 +1,7 @@
 // views/today.js — the daily driver. Hard, focused: your orders, your reps, no excuses.
 
 import { getState, isDone, dayStreak } from '../state.js';
-import { levelFromXp, esc, todayStr } from '../utils.js';
+import { levelFromXp, rankFromXp, esc, todayStr } from '../utils.js';
 import { repCard, ring } from '../components.js';
 import { daily, DIRECTIVES, RING_FULL, RING_PARTIAL, RING_EMPTY, RESIST_CTA, REFLECT_PROMPT } from '../copy.js';
 
@@ -12,6 +12,7 @@ export function today() {
   const doneCount = S.quests.filter(isDone).length;
   const total = S.quests.length;
   const level = levelFromXp(S.totalXp);
+  const rank = rankFromXp(S.totalXp).rank;
   const streak = dayStreak();
   const reflection = (S.history[todayStr()] && S.history[todayStr()].reflection) || '';
   const ringNote = !doneCount ? RING_EMPTY : (doneCount === total ? RING_FULL : RING_PARTIAL);
@@ -21,6 +22,7 @@ export function today() {
       <div>
         <div class="eyebrow">Good ${part}, <b data-action="edit-name" title="click to rename">${esc(S.name)}</b></div>
         <h2>Today</h2>
+        <a class="rank-pill" href="#progress" style="--rc:${rank.color}" title="View the rank ladder"><span class="rp-emblem">◆</span> ${rank.name}</a>
       </div>
       <div class="head-stats">
         <div class="hstat"><span class="hn ember" data-key="level" data-count="${level}">${level}</span><span class="hl">Level</span></div>

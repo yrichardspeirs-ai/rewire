@@ -2,6 +2,7 @@
 
 import { getState, dayStreak, totalRepsDone } from '../state.js';
 import { ds, dowShort, prettyDate, levelFromXp, esc } from '../utils.js';
+import { rankLadder } from '../components.js';
 
 export function progress() {
   const S = getState();
@@ -47,6 +48,9 @@ export function progress() {
       <div class="card sstat"><div class="n gold">${dayStreak()}</div><div class="l">Day Streak</div></div>
       <div class="card sstat"><div class="n">${totalRepsDone()}</div><div class="l">Reps Done</div></div>
     </div>
+
+    <div class="section-label">Rank ladder</div>
+    ${rankLadder()}
 
     <div class="prog-grid">
       <div class="card">

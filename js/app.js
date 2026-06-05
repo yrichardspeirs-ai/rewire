@@ -1,10 +1,12 @@
 // app.js — wires everything together: routing, rendering, and input handling.
 
 import { onChange, onFx, getState, pickSwap, identById,
-  toggleQuest, addQuest, delQuest, editQuestField, resolveUrge, saveReflection, setName, setSetting } from './state.js';
+  toggleQuest, addQuest, delQuest, editQuestField, resolveUrge, saveReflection, setName, setSetting,
+  completeOnboarding, setWhy, editIdentity, toggleQuestHard } from './state.js';
 import { toast, openUrge, closeModal, takeover, closeTakeover } from './ui.js';
 import { burstXP, celebrate, vibrate, sound, syncCounters } from './fx.js';
 import { rand, LEVELUP_LINES, RANKUP_LINES } from './copy.js';
+import { onboarding, ONB_STEPS } from './views/onboarding.js';
 import { today } from './views/today.js';
 import { reps } from './views/reps.js';
 import { resist } from './views/resist.js';
@@ -19,7 +21,20 @@ function currentRoute() {
   return VIEWS[r] ? r : 'today';
 }
 
+// onboarding flow state (only used when getState().onboarded is false)
+let onbStep = 0;
+const onbDraft = {};
+
 function render() {
+  // First-run setup takes over the whole screen until the pact is signed.
+  if (!getState().onboarded) {
+    document.body.classList.add('onboarding');
+    content.innerHTML = onboarding(onbStep, onbDraft);
+    content.scrollTop = 0;
+    return;
+  }
+  document.body.classList.remove('onboarding');
+
   const route = currentRoute();
   content.innerHTML = VIEWS[route]();
   content.scrollTop = 0;
@@ -32,6 +47,16 @@ function render() {
   document.querySelectorAll('.nav-item').forEach(a => {
     a.classList.toggle('active', a.dataset.route === route);
   });
+}
+
+// Pull whatever the current onboarding step collected into the draft.
+function captureOnbStep() {
+  const name = document.getElementById('onb-name');
+  const why = document.getElementById('onb-why');
+  const nem = document.getElementById('onb-nemesis');
+  if (name) onbDraft.name = name.value;
+  if (why) onbDraft.why = why.value;
+  if (nem) onbDraft.nemesis = nem.value;
 }
 
 // re-render on state change and on navigation
@@ -54,6 +79,16 @@ onFx(fx => {
     vibrate([0, 30, 40, 70]);
     return;
   }
+  if (fx.type === 'achievement') {
+    takeover({ kind: 'ACHIEVEMENT', label: fx.icon + ' ' + fx.name, line: fx.desc + ' — into the Cookie Jar it goes.', color: 'var(--gold)' });
+    vibrate([0, 35, 45, 80]); sound('crit');
+    return;
+  }
+  if (fx.type === 'rankladder') {
+    takeover({ kind: 'RANK ASCENDED', label: fx.name, line: 'You climbed the ladder. ' + fx.name + ' is who you are now.', color: fx.color });
+    vibrate([0, 45, 55, 100]); sound('crit');
+    return;
+  }
   // standard XP event
   toast(fx.xp, fx.label, fx.crit);
   burstXP(fxOrigin, fx.xp, fx.crit);
@@ -69,6 +104,9 @@ document.addEventListener('click', e => {
   const { action, id } = el.dataset;
   switch (action) {
     case 'toggle': fxOrigin = el.closest('.quest'); toggleQuest(id); break;
+    case 'toggle-hard': toggleQuestHard(id); break;
+    case 'onb-next': captureOnbStep(); onbStep = Math.min(ONB_STEPS - 1, onbStep + 1); render(); break;
+    case 'onb-back': captureOnbStep(); onbStep = Math.max(0, onbStep - 1); render(); break;
     case 'open-settings': openSettings(); break;
     case 'toggle-setting':
       setSetting(el.dataset.key, !getState().settings[el.dataset.key]);
@@ -102,7 +140,51 @@ document.addEventListener('focusout', e => {
   if (action === 'edit-intent') editQuestField(id, 'intent', el.textContent.trim());
   if (action === 'edit-title') editQuestField(id, 'title', el.textContent.trim());
   if (action === 'edit-target') editQuestField(id, 'target', el.textContent.trim());
+  if (action === 'edit-ident-name') editIdentity(id, 'name', el.textContent.trim());
+  if (action === 'edit-ident-rank') editIdentity(id, 'rank', el.textContent.trim());
+  if (action === 'edit-ident-feeds') editIdentity(id, 'feeds', el.textContent.trim());
 });
+
+// --- hold-to-commit (onboarding pact) -------------------------------------
+let holdRAF, holdStart;
+const HOLD_MS = 1300;
+function holdTick(now) {
+  const btn = document.querySelector('.onb-commit');
+  if (!btn) return;
+  const p = Math.min(1, (now - holdStart) / HOLD_MS);
+  const fill = btn.querySelector('.onb-commit-fill');
+  if (fill) fill.style.width = (p * 100) + '%';
+  if (p >= 1) {
+    cancelHold();
+    btn.classList.add('committed');
+    vibrate([0, 30, 40, 30, 40, 120]); sound('crit');
+    captureOnbStep();
+    onbStep = 0;
+    setTimeout(() => completeOnboarding(onbDraft), 420);
+    return;
+  }
+  holdRAF = requestAnimationFrame(holdTick);
+}
+function startHold() {
+  holdStart = performance.now();
+  cancelAnimationFrame(holdRAF);
+  holdRAF = requestAnimationFrame(holdTick);
+}
+function cancelHold() { cancelAnimationFrame(holdRAF); }
+function releaseHold() {
+  const btn = document.querySelector('.onb-commit');
+  if (btn && !btn.classList.contains('committed')) {
+    cancelHold();
+    const fill = btn.querySelector('.onb-commit-fill');
+    if (fill) fill.style.width = '0%';
+  }
+}
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('[data-action="commit-hold"]')) { e.preventDefault(); startHold(); }
+});
+document.addEventListener('pointerup', releaseHold);
+document.addEventListener('pointercancel', releaseHold);
+document.addEventListener('pointerleave', e => { if (e.target.closest && e.target.closest('.onb-commit')) releaseHold(); }, true);
 
 // identity dropdown change
 document.addEventListener('change', e => {
@@ -110,18 +192,19 @@ document.addEventListener('change', e => {
   if (el) editQuestField(el.dataset.id, 'ident', el.value);
 });
 
-// reflection autosave + tiny saved indicator
-let refTag;
+// autosave + tiny "saved ✓" flash, shared by the reflection box and the "why" box
+function flashSaved(tagId, timerKey) {
+  const tag = document.getElementById(tagId);
+  if (!tag) return;
+  tag.classList.add('show');
+  clearTimeout(window[timerKey]);
+  window[timerKey] = setTimeout(() => tag.classList.remove('show'), 1200);
+}
 document.addEventListener('input', e => {
-  const el = e.target.closest('[data-action="reflect"]');
-  if (!el) return;
-  saveReflection(el.value);
-  refTag = document.getElementById('ref-saved');
-  if (refTag) {
-    refTag.classList.add('show');
-    clearTimeout(window._rt);
-    window._rt = setTimeout(() => refTag.classList.remove('show'), 1200);
-  }
+  const ref = e.target.closest('[data-action="reflect"]');
+  if (ref) { saveReflection(ref.value); flashSaved('ref-saved', '_rt'); return; }
+  const why = e.target.closest('[data-action="edit-why"]');
+  if (why) { setWhy(why.value); flashSaved('why-saved', '_wt'); return; }
 });
 
 // close modal by backdrop click

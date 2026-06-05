@@ -1,20 +1,23 @@
-// views/identity.js — who you are becoming. Identity-based change, made visible.
+// views/identity.js — who you are becoming. Identity-based change, made visible & editable.
 
-import { IDENTITIES, getState } from '../state.js';
+import { getIdentities, getState } from '../state.js';
 import { identProgress, esc } from '../utils.js';
 
 export function identity() {
   const S = getState();
-  const cards = IDENTITIES.map((i, k) => {
+  const cards = getIdentities().map((i, k) => {
     const xp = S.identXp[i.id] || 0;
     const p = identProgress(xp);
     return `
       <div class="ident big" style="--ic:${i.color};animation-delay:${k * 0.05}s">
-        <div class="ihead"><span class="iname">${i.name}</span><span class="ilvl">LV ${p.lvl}</span></div>
-        <div class="irank">${i.rank}</div>
+        <div class="ihead">
+          <span class="iname editable" contenteditable="true" spellcheck="false" data-action="edit-ident-name" data-id="${i.id}">${esc(i.name)}</span>
+          <span class="ilvl">LV ${p.lvl}</span>
+        </div>
+        <div class="irank editable" contenteditable="true" spellcheck="false" data-action="edit-ident-rank" data-id="${i.id}">${esc(i.rank)}</div>
         <div class="bar"><span style="width:${p.pct}%"></span></div>
         <div class="ifoot"><span>${xp} XP</span><span>${p.next} to rank up</span></div>
-        <div class="ifeeds">Fed by: ${esc(i.feeds)}</div>
+        <div class="ifeeds">Fed by: <span class="editable" contenteditable="true" spellcheck="false" data-action="edit-ident-feeds" data-id="${i.id}">${esc(i.feeds)}</span></div>
       </div>`;
   }).join('');
 
@@ -25,7 +28,16 @@ export function identity() {
         <h2>Identity</h2>
       </div>
     </div>
+
+    <div class="card why-card">
+      <h3>Your why</h3>
+      <p class="muted">When it gets hard — and it will — this is the reason you don't fold. Goggins calls it the
+        thing that fuels you. Write it raw and read it before every session.</p>
+      <textarea data-action="edit-why" placeholder="I do this because...">${esc(S.why || '')}</textarea>
+      <span class="saved-tag" id="why-saved">saved ✓</span>
+    </div>
+
     <p class="lead">You don't sustain behavior that feels like a chore. You sustain behavior that confirms who you
-      believe you are. Each rep is a vote. Watch the person you're building take shape.</p>
+      believe you are. Each rep is a vote. Tap any name, rank, or "fed by" line to make these yours.</p>
     <div class="identities big-grid">${cards}</div>`;
 }

@@ -1,7 +1,7 @@
 // views/reps.js — manage the reps themselves: titles, targets, if-then plans.
 
 import { getState } from '../state.js';
-import { IDENTITIES } from '../state.js';
+import { getIdentities } from '../state.js';
 import { repCard } from '../components.js';
 
 export function reps() {
@@ -24,7 +24,7 @@ export function reps() {
       <input class="t" id="add-title" placeholder="New rep (e.g. Cold shower)">
       <input class="i" id="add-intent" placeholder="If-then: When ___, I will ___">
       <select id="add-ident">
-        ${IDENTITIES.map(i => `<option value="${i.id}">${i.name}</option>`).join('')}
+        ${getIdentities().map(i => `<option value="${i.id}">${i.name}</option>`).join('')}
       </select>
       <button data-action="add-rep">+ Add rep</button>
     </div>`;
