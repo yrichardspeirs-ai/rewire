@@ -48,6 +48,7 @@ export function today() {
     <div class="coach">
       <div class="coach-head"><span class="coach-badge">Coach</span><span class="coach-kind">${esc(coach.kind)}</span></div>
       <p>${esc(coach.line)}</p>
+      <button class="coach-open" data-action="open-coach">Talk to your coach →</button>
     </div>
 
     <div class="today-grid">

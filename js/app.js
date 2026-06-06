@@ -4,10 +4,13 @@ import { onChange, onFx, getState, pickSwap, identById,
   toggleQuest, addQuest, delQuest, editQuestField, resolveUrge, saveReflection, setName, setSetting,
   completeOnboarding, setWhy, setNemesis, editIdentity, toggleQuestHard,
   startChallenge, endChallenge, syncChallenge, logFocusSession, logBreath,
-  addFood, removeFood, setNutritionTargets, logWeight, logWorkout, setMetric, addMetricDef, removeMetricDef } from './state.js';
+  addFood, removeFood, setNutritionTargets, logWeight, logWorkout, setMetric, addMetricDef, removeMetricDef,
+  setAiKey, hasAiKey, getCoachChat, pushCoachMsg, clearCoachChat } from './state.js';
+import { aiCoachReply } from './ai.js';
 import { toast, openUrge, closeModal, takeover, closeTakeover } from './ui.js';
 import { burstXP, celebrate, vibrate, sound, syncCounters } from './fx.js';
 import { rand, LEVELUP_LINES, RANKUP_LINES } from './copy.js';
+import { esc } from './utils.js';
 import { onboarding, ONB_STEPS, onbCanAdvance } from './views/onboarding.js';
 import { today } from './views/today.js';
 import { reps } from './views/reps.js';
@@ -143,6 +146,16 @@ document.addEventListener('click', e => {
     case 'end-focus': endFocusEarly(); break;
     case 'start-breath': startBreath(); break;
     case 'end-breath': endBreath(); break;
+    case 'open-coach': openCoach(); break;
+    case 'close-coach': document.getElementById('coach-overlay').classList.remove('show'); break;
+    case 'coach-send': coachSend(); break;
+    case 'coach-clear': clearCoachChat(); renderCoach(); break;
+    case 'open-settings-from-coach': document.getElementById('coach-overlay').classList.remove('show'); openSettings(); break;
+    case 'save-ai-key': {
+      const ki = document.getElementById('ai-key');
+      if (ki) { setAiKey(ki.value); renderSettings(); }
+      break;
+    }
     case 'add-food': {
       const n = document.getElementById('food-name');
       if (!n) break;
@@ -310,6 +323,54 @@ function endBreath() {
   const o = document.getElementById('breath-overlay'); if (o) o.classList.remove('show');
 }
 
+// --- AI coach chat --------------------------------------------------------
+let coachBusy = false;
+function renderCoach() {
+  const box = document.getElementById('coach-msgs');
+  if (!box) return;
+  if (!hasAiKey()) {
+    box.innerHTML = `<div class="coach-empty">
+      <p>Your coach needs a free Google Gemini key to talk back — stored only on this device.</p>
+      <p class="muted small">Get one in ~2 min at <b>aistudio.google.com → Get API key</b>, then paste it in Settings.</p>
+      <button class="onb-primary" data-action="open-settings-from-coach">Open Settings</button>
+    </div>`;
+    return;
+  }
+  const chat = getCoachChat();
+  const msgs = chat.length
+    ? chat.map(m => `<div class="cmsg ${m.role}">${esc(m.text)}</div>`).join('')
+    : `<div class="coach-empty"><p>Your coach can see your reps, streaks, challenge, and reflections. Ask it anything — or just say "talk to me."</p></div>`;
+  box.innerHTML = msgs + (coachBusy ? `<div class="cmsg coach typing"><span></span><span></span><span></span></div>` : '');
+  box.scrollTop = box.scrollHeight;
+}
+function openCoach() {
+  const o = document.getElementById('coach-overlay'); if (!o) return;
+  o.classList.add('show');
+  renderCoach();
+  const inp = document.getElementById('coach-input'); if (inp && hasAiKey()) setTimeout(() => inp.focus(), 50);
+}
+async function coachSend() {
+  if (coachBusy) return;
+  const inp = document.getElementById('coach-input');
+  const text = inp && inp.value.trim();
+  if (!text) return;
+  if (!hasAiKey()) { renderCoach(); return; }
+  inp.value = '';
+  pushCoachMsg('user', text);
+  coachBusy = true; renderCoach();
+  try {
+    const reply = await aiCoachReply();
+    coachBusy = false;
+    pushCoachMsg('coach', reply);
+    renderCoach();
+    vibrate(20);
+  } catch (e) {
+    coachBusy = false;
+    pushCoachMsg('coach', '⚠️ ' + (e && e.message ? e.message : 'Something went wrong.'));
+    renderCoach();
+  }
+}
+
 // identity dropdown change
 document.addEventListener('change', e => {
   const el = e.target.closest('[data-action="edit-ident"]');
@@ -349,12 +410,24 @@ const SETTINGS_ROWS = [
 ];
 function renderSettings() {
   const s = getState().settings || {};
-  document.getElementById('settings-body').innerHTML = SETTINGS_ROWS.map(r => `
+  const rows = SETTINGS_ROWS.map(r => `
     <div class="set-row">
       <div><div class="set-name">${r.label}</div><div class="set-desc">${r.desc}</div></div>
       <button class="switch ${s[r.key] ? 'on' : ''}" data-action="toggle-setting" data-key="${r.key}"
         role="switch" aria-checked="${!!s[r.key]}" aria-label="${r.label}"><span class="knob"></span></button>
     </div>`).join('');
+  const connected = hasAiKey();
+  const aiBlock = `
+    <div class="set-ai">
+      <div class="set-name">AI Coach <span class="ai-status ${connected ? 'on' : ''}">${connected ? 'Connected ✓' : 'Off'}</span></div>
+      <div class="set-desc">Optional. Paste your free Google Gemini key to unlock a coach that talks back and sees your stats.
+        Get one at <b>aistudio.google.com</b> → Get API key. Stored only on this device; nothing is sent until you chat.</div>
+      <div class="ai-key-row">
+        <input id="ai-key" class="ai-key-input" type="password" autocomplete="off" placeholder="AIza… (Gemini key)" value="${esc(getState().ai && getState().ai.key || '')}">
+        <button class="ai-key-save" data-action="save-ai-key">Save</button>
+      </div>
+    </div>`;
+  document.getElementById('settings-body').innerHTML = rows + aiBlock;
 }
 function openSettings() {
   renderSettings();
@@ -364,13 +437,14 @@ document.getElementById('settings').addEventListener('click', e => {
   if (e.target.id === 'settings') e.currentTarget.classList.remove('show');
 });
 
-// enter-to-add on the reps page
+// enter-to-add on the reps page; enter-to-send in the coach chat
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.id === 'add-title') {
     const i = document.getElementById('add-intent');
     const s = document.getElementById('add-ident');
     addQuest(e.target.value.trim(), i.value.trim(), s.value);
   }
+  if (e.key === 'Enter' && e.target.id === 'coach-input') { e.preventDefault(); coachSend(); }
 });
 
 // Failures happen by the passage of time, so re-evaluate the challenge on load —

@@ -70,6 +70,8 @@ function defaultState() {
       ],
       log: {}, // 'YYYY-MM-DD' -> { metricId: 1..5 }
     },
+    // Opt-in AI coach. key is the user's own Gemini key, stored on-device only.
+    ai: { provider: 'gemini', key: '', chat: [] },
     settings: { sound: false, haptics: true, motion: true, tone: 'clean' },
   };
 }
@@ -97,6 +99,7 @@ function migrate(p) {
   s.nutrition = (p.nutrition && p.nutrition.targets) ? p.nutrition : d.nutrition;
   s.body = (p.body && p.body.weights) ? p.body : { weights: [], workouts: [] };
   s.metrics = (p.metrics && p.metrics.defs) ? p.metrics : d.metrics;
+  s.ai = (p.ai && typeof p.ai === 'object') ? Object.assign({ provider: 'gemini', key: '', chat: [] }, p.ai) : { provider: 'gemini', key: '', chat: [] };
   s.settings = Object.assign({ sound: false, haptics: true, motion: true, tone: 'clean' }, p.settings || {});
   s.quests = (p.quests && p.quests.length) ? p.quests : clone(DEFAULT_QUESTS);
   return s;
@@ -374,6 +377,18 @@ export function logWorkout(w) {
 export function setMetric(id, val) { const t = todayStr(); (S.metrics.log[t] = S.metrics.log[t] || {})[id] = +val; emit(); }
 export function addMetricDef(label, emoji) { if (!label) return; S.metrics.defs.push({ id: 'm_' + Date.now(), label: label.slice(0, 24), emoji: emoji || '•' }); emit(); }
 export function removeMetricDef(id) { S.metrics.defs = S.metrics.defs.filter(m => m.id !== id); emit(); }
+
+// --- AI coach (opt-in) ----------------------------------------------------
+export function setAiKey(k) { S.ai.key = (k || '').trim(); emit(); }
+export function hasAiKey() { return !!(S.ai && S.ai.key); }
+export function getCoachChat() { return (S.ai && S.ai.chat) || []; }
+export function pushCoachMsg(role, text) {
+  S.ai.chat = S.ai.chat || [];
+  S.ai.chat.push({ role, text, ts: Date.now() });
+  S.ai.chat = S.ai.chat.slice(-40);
+  persist(); // overlay re-renders itself; don't trigger a full view re-render mid-chat
+}
+export function clearCoachChat() { S.ai.chat = []; emit(); }
 
 // Pure: derive the full state of the active challenge from history. No mutation.
 export function challengeProgress() {

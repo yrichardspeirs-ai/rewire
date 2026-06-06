@@ -22,6 +22,7 @@ const SHELL = [
   './js/copy.js',
   './js/achievements.js',
   './js/focus-areas.js',
+  './js/ai.js',
   './js/views/onboarding.js',
   './js/views/today.js',
   './js/views/reps.js',
